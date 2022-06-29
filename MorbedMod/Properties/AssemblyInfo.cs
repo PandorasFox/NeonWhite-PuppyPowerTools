@@ -38,5 +38,5 @@ using MorbedMod;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-[assembly: MelonInfo(typeof(Speedometer), "Morbed Mod", "1.0.1", "Pandora's Fox")]
+[assembly: MelonInfo(typeof(Speedometer), "Morbed Mod", "1.1.0", "Pandora's Fox")]
 [assembly: MelonGame("Little Flag Software, LLC", "Neon White")]

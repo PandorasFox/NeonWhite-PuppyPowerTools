@@ -19,7 +19,33 @@ namespace MorbedMod {
         public Vector3 pos = Vector3.zero;
         public Vector3 dir = Vector3.zero;
 
-        // TODO: add preferences in OnApplicationStart for speedometer
+        // Preferences
+
+        public static MelonPreferences_Category speedometer_config;
+
+        public static MelonPreferences_Entry<Color> text_color;
+        public static MelonPreferences_Entry<Color> text_color_dashing;
+        public static MelonPreferences_Entry<Color> text_color_fast;
+        public static MelonPreferences_Entry<Color> text_color_slow;
+
+        public static MelonPreferences_Entry<int> x_offset;
+        public static MelonPreferences_Entry<int> y_offset;
+        public static MelonPreferences_Entry<int> font_size;
+        public static MelonPreferences_Entry<bool> verbose_display;
+
+        public override void OnApplicationStart() {
+            speedometer_config = MelonPreferences.CreateCategory("Speedometer Config");
+            verbose_display = speedometer_config.CreateEntry("Verbose Info", false);
+
+            text_color = speedometer_config.CreateEntry("Text color (Default)", Color.yellow);
+            text_color_dashing = speedometer_config.CreateEntry("Text color (Dashing)", Color.blue);
+            text_color_fast = speedometer_config.CreateEntry("Text color (Fast)", Color.green);
+            text_color_slow = speedometer_config.CreateEntry("Text color (Slow)", Color.red);
+
+            x_offset = speedometer_config.CreateEntry("X Offset", 30);
+            y_offset = speedometer_config.CreateEntry("Y Offset", 30);
+            font_size = speedometer_config.CreateEntry("Font Size", 20);
+        }
 
         public override void OnLateUpdate() {
             if (RM.mechController && RM.mechController.GetIsAlive()) {
@@ -49,14 +75,14 @@ namespace MorbedMod {
             GUIStyle style = new GUIStyle();
 
             style.fixedHeight = 30;
-            style.fontSize = 20;
-            style.normal.textColor = Color.yellow;
+            style.fontSize = font_size.Value;
 
             return style;
         }
 
-        public void DrawText(int x_offset, int y_offset, string s) {
+        public void DrawText(int x_offset, int y_offset, string s, Color c) {
             GUIStyle style = SpeedometerStyle();
+            style.normal.textColor = c;
 
             GUIStyle outline_style = SpeedometerStyle();
             outline_style.normal.textColor = Color.black;
@@ -72,32 +98,38 @@ namespace MorbedMod {
                 GUI.Label(new Rect(r.x + i, r.y - outline_strength, r.width, r.height), s, outline_style);
                 GUI.Label(new Rect(r.x + i, r.y + outline_strength, r.width, r.height), s, outline_style);
             }
-            GUI.Label(r, s, SpeedometerStyle());
+            GUI.Label(r, s, style);
         }
 
         public override void OnGUI() {
             if (RM.mechController && RM.mechController.GetIsAlive()) {
-                int x_offset = 30;
-                int y_offset = 30;
+                int local_y_offset = y_offset.Value;
 
                 GUIStyle style = SpeedometerStyle();
                 // draw position
-                DrawText(x_offset, y_offset, Vec3ToString(this.pos) + " | " + Vec3ToString(this.dir));
-                y_offset += 31;
+                if (verbose_display.Value) {
+                    DrawText(x_offset.Value, local_y_offset, Vec3ToString(this.pos) + " | " + Vec3ToString(this.dir), text_color.Value);
+                    local_y_offset += font_size.Value + 2;
+
+                    DrawText(x_offset.Value, local_y_offset, "Velocity: " + Vec3ToString(this.total_velocity), text_color.Value);
+                    local_y_offset += font_size.Value + 2;
+                }
 
                 // draw Velocities
-                DrawText(x_offset, y_offset, "Velocity: " + Vec3ToString(this.total_velocity));
-                y_offset += 31;
-                DrawText(x_offset + 5, y_offset,
-                    "Lateral: " + this.lateral_velocity_magnitude.ToString("N2")
-                    + " | y: " + this.vertical_velocity.ToString("N2")
-                );
-                y_offset += 31;
-
+                Color color = text_color.Value;
                 if (this.is_dashing) {
-                    DrawText(x_offset, y_offset, "Dashing!");
-                    y_offset += 31;
+                    color = text_color_dashing.Value;
+                } else if (lateral_velocity_magnitude > 18.75) {
+                    color = text_color_fast.Value;
+                } else if (lateral_velocity_magnitude < 18.725) { // prevent rounding flickers
+                    color = text_color_slow.Value;
                 }
+                DrawText(x_offset.Value, local_y_offset,
+                    "Lateral: " + this.lateral_velocity_magnitude.ToString("N2")
+                    + " | y: " + this.vertical_velocity.ToString("N2"),
+                    color
+                );
+                local_y_offset += font_size.Value + 2;
             }
         }
     }

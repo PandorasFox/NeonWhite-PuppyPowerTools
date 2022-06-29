@@ -10,6 +10,12 @@ This mod uses [MelonLoader](https://github.com/LavaGang/MelonLoader) as its modl
 
 After that, grab the latest .dll from the [Releases page](https://github.com/PandorasFox/Neon-White-Mods/releases) and drop it in the "Mods" folder in your Neon White folder, e.g. `SteamLibrary\steamapps\common\Neon White\Mods`.
 
+## Configuration
+
+Configuration for this mod is provided by the **Mono Varient** of [Melon Preferences Manager](https://github.com/sinai-dev/MelonPreferencesManager/releases/). Its default in-game bind is F5.
+
+The IL2CPP version of Melon Preferences Manager will **NOT** work. You **must** use the Mono variant.
+
 ## Usage
 
 For now, there is no configuration or anything. This just displays your position, facing direction, and movement velocities in the top-left corner in yellow.
