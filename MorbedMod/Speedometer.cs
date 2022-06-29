@@ -121,15 +121,29 @@ namespace MorbedMod {
                     color = text_color_dashing.Value;
                 } else if (lateral_velocity_magnitude > 18.75) {
                     color = text_color_fast.Value;
-                } else if (lateral_velocity_magnitude < 18.725) { // prevent rounding flickers
+                } else if (lateral_velocity_magnitude < 18.7) { // prevent rounding flickers
                     color = text_color_slow.Value;
                 }
                 DrawText(x_offset.Value, local_y_offset,
-                    "Lateral: " + this.lateral_velocity_magnitude.ToString("N2")
-                    + " | y: " + this.vertical_velocity.ToString("N2"),
+                    "Lateral: " + this.lateral_velocity_magnitude.ToString("N2"),
                     color
                 );
                 local_y_offset += font_size.Value + 2;
+
+                if (this.is_dashing) {
+                    color = text_color_dashing.Value;
+                } else if (vertical_velocity > 0.1) {
+                    color = text_color_fast.Value;
+                } else if (vertical_velocity < 0.1) {
+                    color = text_color_slow.Value;
+                }
+
+                DrawText(x_offset.Value, local_y_offset,
+                    "y: " + this.vertical_velocity.ToString("N2"),
+                    color
+                );
+                local_y_offset += font_size.Value + 2;
+
             }
         }
     }
