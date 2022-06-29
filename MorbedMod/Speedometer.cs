@@ -86,9 +86,12 @@ namespace MorbedMod {
                 y_offset += 31;
 
                 // draw Velocities
-                DrawText(x_offset, y_offset, "Norm Velocity: " + this.lateral_velocity_magnitude.ToString("N2") + "  ( " + Vec3ToString(this.total_velocity) + " )");
+                DrawText(x_offset, y_offset, "Velocity: " + Vec3ToString(this.total_velocity));
                 y_offset += 31;
-                DrawText(x_offset + 5, y_offset, "y: " + this.vertical_velocity.ToString("N2"));
+                DrawText(x_offset + 5, y_offset,
+                    "Lateral: " + this.lateral_velocity_magnitude.ToString("N2")
+                    + " | y: " + this.vertical_velocity.ToString("N2")
+                );
                 y_offset += 31;
 
                 if (this.is_dashing) {
