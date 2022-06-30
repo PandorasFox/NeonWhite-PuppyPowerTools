@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,6 +32,8 @@ namespace MorbedMod {
         public static MelonPreferences_Entry<int> font_size;
         public static MelonPreferences_Entry<bool> verbose_display;
 
+        public static MelonPreferences_Entry<int> level_rush_seed;
+
         public override void OnApplicationStart() {
             speedometer_config = MelonPreferences.CreateCategory("Speedometer Config");
             verbose_display = speedometer_config.CreateEntry("Verbose Info", false);
@@ -45,6 +46,12 @@ namespace MorbedMod {
             x_offset = speedometer_config.CreateEntry("X Offset", 30);
             y_offset = speedometer_config.CreateEntry("Y Offset", 30);
             font_size = speedometer_config.CreateEntry("Font Size", 20);
+
+            level_rush_seed = speedometer_config.CreateEntry("Rush Seed (random if negative)", -1);
+        }
+
+        public override void OnPreferencesSaved() {
+            GameDataManager.powerPrefs.seedForLevelRushLevelOrder_NegativeValuesMeansRandomizeSeed = level_rush_seed.Value;
         }
 
         public override void OnLateUpdate() {
@@ -74,7 +81,7 @@ namespace MorbedMod {
         public static GUIStyle SpeedometerStyle() {
             GUIStyle style = new GUIStyle();
 
-            style.fixedHeight = 30;
+            style.fixedHeight = font_size.Value;
             style.fontSize = font_size.Value;
 
             return style;
