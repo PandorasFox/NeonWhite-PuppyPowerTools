@@ -17,6 +17,8 @@ namespace MorbedMod {
 
         public Vector3 pos = Vector3.zero;
         public Vector3 dir = Vector3.zero;
+        public float facing_direction = 0f;
+        public float facing_angle = 0f;
 
         // Preferences
 
@@ -58,6 +60,8 @@ namespace MorbedMod {
             if (RM.mechController && RM.mechController.GetIsAlive()) {
                 this.pos = RM.playerPosition;
                 this.dir = RM.mechController.playerCamera.PlayerCam.transform.forward;
+                this.facing_direction = RM.drifter.mouseLookX.RotationX;
+                this.facing_angle = RM.drifter.mouseLookY.RotationY;
 
                 Vector3 normal_velocity = RM.drifter.Velocity;
                 Vector3 move_velocity = RM.drifter.MovementVelocity;
@@ -115,14 +119,21 @@ namespace MorbedMod {
                 GUIStyle style = SpeedometerStyle();
                 // draw position
                 if (verbose_display.Value) {
-                    DrawText(x_offset.Value, local_y_offset, Vec3ToString(this.pos) + " | " + Vec3ToString(this.dir), text_color.Value);
+                    DrawText(x_offset.Value, local_y_offset, Vec3ToString(this.pos), text_color.Value);
                     local_y_offset += font_size.Value + 2;
 
+                    //facing angle and vector direction
+                    DrawText(x_offset.Value, local_y_offset,
+                        this.facing_direction.ToString("N2") + ", " + this.facing_angle.ToString("N2") 
+                        + " | " +  Vec3ToString(this.dir), text_color.Value);
+                    local_y_offset += font_size.Value + 2;
+
+                    // velocity vector
                     DrawText(x_offset.Value, local_y_offset, "Velocity: " + Vec3ToString(this.total_velocity), text_color.Value);
                     local_y_offset += font_size.Value + 2;
                 }
 
-                // draw Velocities
+                // draw Velocity magnitudes
                 Color color = text_color.Value;
                 if (this.is_dashing) {
                     color = text_color_dashing.Value;
