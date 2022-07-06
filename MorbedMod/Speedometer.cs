@@ -5,9 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MelonLoader;
+using HarmonyLib;
 using UnityEngine;
 
+public enum ChapterTimerState {
+    NOT_STARTED,
+    STARTED,
+    LEVEL_FINISHED,
+}
+
 namespace MorbedMod {
+    // TODO: maybe rename this class bc it's now the MorbedClass, and properly compartmentalize its components
+
     public class Speedometer : MelonMod {
         public bool is_dashing = false;
         public Vector3 total_velocity = Vector3.zero;
@@ -20,10 +29,13 @@ namespace MorbedMod {
         public float facing_direction = 0f;
         public float facing_angle = 0f;
 
+        public static long chapter_time_sum = 0;
+        public bool chapter_start_hooked = false;
+        public static ChapterTimerState chapter_timer_state = ChapterTimerState.NOT_STARTED;
+
         // Preferences
 
         public static MelonPreferences_Category speedometer_config;
-
         public static MelonPreferences_Entry<Color> text_color;
         public static MelonPreferences_Entry<Color> text_color_dashing;
         public static MelonPreferences_Entry<Color> text_color_fast;
@@ -34,7 +46,15 @@ namespace MorbedMod {
         public static MelonPreferences_Entry<int> font_size;
         public static MelonPreferences_Entry<bool> verbose_display;
 
+        public static MelonPreferences_Category misc_speedrun_config;
+
         public static MelonPreferences_Entry<int> level_rush_seed;
+
+        public static MelonPreferences_Entry<bool> chapter_time_display;
+        public static MelonPreferences_Entry<Color> chapter_text_color;
+        public static MelonPreferences_Entry<int> chapter_x_offset;
+        public static MelonPreferences_Entry<int> chapter_y_offset;
+        public static MelonPreferences_Entry<int> chapter_font_size;
 
         public override void OnApplicationStart() {
             speedometer_config = MelonPreferences.CreateCategory("Speedometer Config");
@@ -49,11 +69,70 @@ namespace MorbedMod {
             y_offset = speedometer_config.CreateEntry("Y Offset", 30);
             font_size = speedometer_config.CreateEntry("Font Size", 20);
 
-            level_rush_seed = speedometer_config.CreateEntry("Rush Seed (random if negative)", -1);
+            misc_speedrun_config = MelonPreferences.CreateCategory("Misc. MorbedMod config");
+            level_rush_seed = misc_speedrun_config.CreateEntry("Rush Seed (random if negative)", -1);
+            chapter_time_display = misc_speedrun_config.CreateEntry("Chapter Rush timer display", false);
+
+            chapter_x_offset = misc_speedrun_config.CreateEntry("X Offset", 200);
+            chapter_y_offset = misc_speedrun_config.CreateEntry("Y Offset", 30);
+            // TODO: rewrite styles handling :woozy:
+            // chapter_font_size = misc_speedrun_config.CreateEntry("Font Size", 20);
+            chapter_text_color = misc_speedrun_config.CreateEntry("Text color (Default)", Color.yellow);
+
+            if (chapter_time_display.Value) {
+                ApplyChapterHooks();
+            }
+        }
+
+        public void ApplyChapterHooks() {
+            if (!chapter_start_hooked) {
+                this.HarmonyInstance.PatchAll(typeof(ChapterTimerHooks_Patch));
+                chapter_start_hooked = true;
+            }
+        }
+
+        public class ChapterTimerHooks_Patch {
+            // initial level start
+            [HarmonyPatch(typeof(Game), "PlayLevel", new Type[] { typeof(string), typeof(bool), typeof(Action) })]
+            [HarmonyPostfix]
+            public static void HookLevelStart_FromArchive(bool fromArchive) {
+                if (fromArchive) {
+                    chapter_time_sum = 0;
+                    chapter_timer_state = ChapterTimerState.STARTED;
+                }
+            }
+
+            // level restart passes the actual LevelData obj
+            // just restart the timer state.
+            [HarmonyPatch(typeof(Game), "PlayLevel", new Type[] { typeof(LevelData), typeof(bool), typeof(bool) })]
+            [HarmonyPostfix]
+            public static void HookLevelRestart_FromArchive() {
+                chapter_timer_state = ChapterTimerState.STARTED;
+            }
+
+            [HarmonyPatch(typeof(Game), "PlayNextArchiveLevel")]
+            [HarmonyPostfix]
+            public static void onNextLevel() {
+                chapter_timer_state = ChapterTimerState.STARTED;
+            }
+
+            [HarmonyPatch(typeof(Game), "WinRoutine")]
+            [HarmonyPatch(typeof(MechController), "Die")]
+            [HarmonyPrefix] // these need to prefix bc PlayNext handles the Started state from within this call
+            public static void OnLevelFinishDieRestartEtc() {
+                chapter_time_sum += Singleton<Game>.Instance.GetCurrentLevelTimerMicroseconds();
+                chapter_timer_state = ChapterTimerState.LEVEL_FINISHED;
+            }
         }
 
         public override void OnPreferencesSaved() {
             GameDataManager.powerPrefs.seedForLevelRushLevelOrder_NegativeValuesMeansRandomizeSeed = level_rush_seed.Value;
+            if (chapter_start_hooked && !chapter_time_display.Value) {
+                this.HarmonyInstance.UnpatchSelf();
+                chapter_start_hooked = false;
+            } else if (!chapter_start_hooked && chapter_time_display.Value) {
+                ApplyChapterHooks();
+            }
         }
 
         public override void OnLateUpdate() {
@@ -113,6 +192,14 @@ namespace MorbedMod {
         }
 
         public override void OnGUI() {
+            if (chapter_time_display.Value) {
+                long total_chapter_time = chapter_time_sum;
+                if (chapter_timer_state == ChapterTimerState.STARTED) {
+                    total_chapter_time += Singleton<Game>.Instance.GetCurrentLevelTimerMicroseconds();
+                }
+                DrawText(chapter_x_offset.Value, chapter_y_offset.Value, Game.GetTimerFormattedMillisecond(total_chapter_time), chapter_text_color.Value);
+            }
+
             if (RM.mechController && RM.mechController.GetIsAlive()) {
                 int local_y_offset = y_offset.Value;
 
