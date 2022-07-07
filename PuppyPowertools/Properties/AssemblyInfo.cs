@@ -3,16 +3,16 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using MelonLoader;
-using MorbedMod;
+using Puppy;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MorbedMod")]
+[assembly: AssemblyTitle("PuppyPowertools")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("MorbedMod")]
+[assembly: AssemblyProduct("PuppyPowertools")]
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -38,5 +38,5 @@ using MorbedMod;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-[assembly: MelonInfo(typeof(Speedometer), "Morbed Mod", "1.3.0", "Pandora's Fox")]
+[assembly: MelonInfo(typeof(PuppyPowertools), "Puppy Powertools", "1.3.0", "Pandora's Fox")]
 [assembly: MelonGame("Little Flag Software, LLC", "Neon White")]

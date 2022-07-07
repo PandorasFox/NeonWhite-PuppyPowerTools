@@ -7,8 +7,8 @@
     <ProjectGuid>{AD8E857A-C77B-4A6C-83E3-3E06C056A4F8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MorbedMod</RootNamespace>
-    <AssemblyName>MorbedMod</AssemblyName>
+    <RootNamespace>PuppyPowertools</RootNamespace>
+    <AssemblyName>PuppyPowertools</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -57,7 +57,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Speedometer.cs" />
+    <Compile Include="PuppyPowertools.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
