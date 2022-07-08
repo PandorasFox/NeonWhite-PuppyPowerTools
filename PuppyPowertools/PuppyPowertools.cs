@@ -305,7 +305,7 @@ namespace Puppy {
         public override void OnApplicationStart() {
             poweruserprefs = MelonPreferences.CreateCategory("PowerPrefs adjustments");
             level_rush_seed = poweruserprefs.CreateEntry("Level Rush Seed (negative is random)", -1);
-            this.HarmonyInstance.PatchAll(typeof(DamageDebugLogging_Patch));
+            //this.HarmonyInstance.PatchAll(typeof(DamageDebugLogging_Patch));
 
             this.speedometer.OnApplicationStart();
             this.chapter_timer.OnApplicationStart();
