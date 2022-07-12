@@ -1,8 +1,16 @@
-# MorbedMod
+# Puppy Powertools
 
-This mod aims to just be a speedrunning mod that just displays some extra info (e.g. position, velocity) and, ideally, will be allowed in speedruns.
+This mod aims to just be a speedrunning mod with some minor Quality of Life features that are allowed for use in speedrun submissions.
 
-For now, this mod only contains a speedometer + position/facing direction text draw, but the goal is to have a handful of small modules that can be independently toggled on and off.
+This mod started as just a speedometer, but has evolved into a handful of independent modules that can be independently configured.
+
+## Current Features
+
+* Speedometer (lateral/vertical velocity components separated)
+  * Optional precise position/facing direction info 
+* Chapter timer for chapter runs
+* on-the-fly powerprefs adjustment (currently just the Level Rush Shuffle seed)
+* VFX toggling (currently, just for turning off the fireball particle fx around the screen)
 
 ## Installation
 
