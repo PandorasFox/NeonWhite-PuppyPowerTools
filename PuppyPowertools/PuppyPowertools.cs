@@ -52,10 +52,12 @@ namespace Puppy {
     public class PuppyPowertools : MelonMod {
         Speedometer speedometer = null;
         ChapterTimer chapter_timer = null;
+        VfxToggles vfx_toggles = null;
 
         PuppyPowertools() {
             this.speedometer = new Speedometer();
             this.chapter_timer = new ChapterTimer();
+            this.vfx_toggles = new VfxToggles();
         }
 
         // shared GUI helper funcs
@@ -299,6 +301,44 @@ namespace Puppy {
             }
         }
 
+        public class VfxToggles : MelonMod {
+            public static MelonPreferences_Category VfxSettings;
+            public static MelonPreferences_Entry<bool> fireball_disabled;
+
+            public override void OnApplicationStart() {
+                VfxSettings = MelonPreferences.CreateCategory("VFX Toggles");
+                fireball_disabled = VfxSettings.CreateEntry("Disable fireball", false);
+                /*
+                if (fireball_disabled.Value) {
+                    ApplyFireballPatch();
+                }
+                */
+            }
+            /*
+            public override void OnPreferencesSaved() {
+                if (fireball_disabled.Value) {
+                    ApplyFireballPatch();
+                } else {
+                    DisableFireballPatch();    
+                }
+            }
+
+            public void ApplyFireballPatch() {
+
+            }
+
+            public void DisableFireballPatch() {
+
+            }
+            */
+            public override void OnUpdate() {
+                if (fireball_disabled.Value) {
+                    RM.mechController.fireballParticles.Stop();
+                    RM.mechController.fireballTrailParticles.Stop();
+                }
+            }
+        }
+
         public static MelonPreferences_Category poweruserprefs;
         public static MelonPreferences_Entry<int> level_rush_seed;
 
@@ -309,15 +349,21 @@ namespace Puppy {
 
             this.speedometer.OnApplicationStart();
             this.chapter_timer.OnApplicationStart();
+            this.vfx_toggles.OnApplicationStart();
         }
 
         public override void OnPreferencesSaved() {
             GameDataManager.powerPrefs.seedForLevelRushLevelOrder_NegativeValuesMeansRandomizeSeed = level_rush_seed.Value;
             this.chapter_timer.OnPreferencesSaved();
+            //this.vfx_toggles.OnPreferencesSaved();
         }
 
         public override void OnLateUpdate() {
             this.speedometer.OnLateUpdate();
+        }
+
+        public override void OnUpdate() {
+            this.vfx_toggles.OnUpdate();
         }
 
         public override void OnGUI() {
