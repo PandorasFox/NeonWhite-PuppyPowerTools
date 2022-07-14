@@ -332,7 +332,7 @@ namespace Puppy {
             }
             */
             public override void OnUpdate() {
-                if (fireball_disabled.Value) {
+                if (fireball_disabled.Value && RM.mechController) {
                     RM.mechController.fireballParticles.Stop();
                     RM.mechController.fireballTrailParticles.Stop();
                 }
@@ -364,6 +364,7 @@ namespace Puppy {
 
         public override void OnUpdate() {
             this.vfx_toggles.OnUpdate();
+
         }
 
         public override void OnGUI() {
