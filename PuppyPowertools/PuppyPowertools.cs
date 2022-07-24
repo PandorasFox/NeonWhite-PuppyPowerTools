@@ -110,6 +110,7 @@ namespace Puppy {
             public float facing_angle = 0f;
 
             public static MelonPreferences_Category speedometer_config;
+            public static MelonPreferences_Entry<bool> speedometer_enabled;
             public static MelonPreferences_Entry<Color> text_color;
             public static MelonPreferences_Entry<Color> text_color_dashing;
             public static MelonPreferences_Entry<Color> text_color_fast;
@@ -119,8 +120,10 @@ namespace Puppy {
             public static MelonPreferences_Entry<int> y_offset;
             public static MelonPreferences_Entry<int> font_size;
             public static MelonPreferences_Entry<bool> verbose_display;
+
             public override void OnApplicationStart() {
                 speedometer_config = MelonPreferences.CreateCategory("Speedometer Config");
+                speedometer_enabled = speedometer_config.CreateEntry("Speedometer Enabled", true);
                 verbose_display = speedometer_config.CreateEntry("Verbose Info", false);
 
                 text_color = speedometer_config.CreateEntry("Text color (Default)", Color.yellow);
@@ -132,8 +135,9 @@ namespace Puppy {
                 y_offset = speedometer_config.CreateEntry("Y Offset", 30);
                 font_size = speedometer_config.CreateEntry("Font Size", 20);
             }
+
             public override void OnLateUpdate() {
-                if (RM.mechController && RM.mechController.GetIsAlive()) {
+                if (speedometer_enabled.Value && RM.mechController && RM.mechController.GetIsAlive()) {
                     this.pos = RM.playerPosition;
                     this.dir = RM.mechController.playerCamera.PlayerCam.transform.forward;
                     this.facing_direction = RM.drifter.mouseLookX.RotationX;
@@ -154,7 +158,7 @@ namespace Puppy {
                 }
             }
             public override void OnGUI() {
-                if (RM.mechController && RM.mechController.GetIsAlive()) {
+                if (speedometer_enabled.Value && RM.mechController && RM.mechController.GetIsAlive()) {
                     int size = font_size.Value;
                     int local_y_offset = y_offset.Value;
 
