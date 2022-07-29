@@ -1,3 +1,5 @@
+# In this fork I am working on creating Collider (hitbox) visibility settings. 
+
 # Puppy Powertools
 
 This mod aims to just be a speedrunning mod with some minor Quality of Life features that are allowed for use in speedrun submissions.
