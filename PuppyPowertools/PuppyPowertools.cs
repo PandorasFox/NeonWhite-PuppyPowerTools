@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 using MelonLoader;
 using HarmonyLib;
 using UnityEngine;
-using Guirao.UltimateTextDamage;
 using I2.Loc;
 
 namespace Puppy {
@@ -132,6 +128,7 @@ namespace Puppy {
                         DrawText(x_offset.Value, local_y_offset, Vec3ToString(this.pos), size, text_color.Value);
                         local_y_offset += font_size.Value + 2;
 
+                        // TODO: maybe split facing angle/direction into a 'nicer' representation + separate toggle?
                         //facing angle and vector direction
                         DrawText(x_offset.Value, local_y_offset,
                             this.facing_direction.ToString("N2") + ", " + this.facing_angle.ToString("N2")
@@ -276,6 +273,8 @@ namespace Puppy {
             public static MelonPreferences_Entry<bool> reflections_disabled;
             public static MelonPreferences_Entry<bool> bloom_disabled;
             public static MelonPreferences_Entry<bool> fireball_disabled;
+            public static MelonPreferences_Entry<bool> stomp_splashbang_disabled;
+            public static MelonPreferences_Entry<bool> stomp_splash_disabled;
 
             private HarmonyLib.Harmony harmony_instance = new HarmonyLib.Harmony("sunkiller");
 
@@ -285,7 +284,11 @@ namespace Puppy {
                 bloom_disabled = VfxSettings.CreateEntry("Disable bloom", false);
                 reflections_disabled = VfxSettings.CreateEntry("Disable reflection flares", false);
                 fireball_disabled = VfxSettings.CreateEntry("Disable fireball screen effect", false);
+                stomp_splashbang_disabled = VfxSettings.CreateEntry("Disable stomp splashbang", false);
+
+                // i cannot be fucked to make these dynamically unloadable given that most people will turn this shit off and never think about them again
                 harmony_instance.PatchAll(typeof(FuckTheSun_Patch));
+                harmony_instance.PatchAll(typeof(AntiStompFlashbang_Patch));
             }
 
             public override void OnPreferencesSaved() {
@@ -303,6 +306,20 @@ namespace Puppy {
                 }
             }
 
+            public class AntiStompFlashbang_Patch {
+                [HarmonyPatch(typeof(ScannerEffect), "OnStomp")]
+                [HarmonyPostfix]
+                public static void AntiFlashbang(ScannerEffect __instance) {
+                    if (!stomp_splashbang_disabled.Value) return;
+                    // grab __instance._currentProfile by reflection
+                    Type Scanner = typeof(ScannerEffect);
+                    FieldInfo profileField = Scanner.GetField("_currentProfile", BindingFlags.NonPublic | BindingFlags.Instance);
+                    ScannerEffectProfile currentProfile = (ScannerEffectProfile) profileField.GetValue(__instance);
+                    // turn off the stomp particle immediately!
+                    currentProfile.particles.Stop();
+                }
+            }
+
             public class FuckTheSun_Patch {
                 // initial level start
                 [HarmonyPatch(typeof(Game), "PlayLevel", new Type[] { typeof(string), typeof(bool), typeof(Action) })]
@@ -314,6 +331,12 @@ namespace Puppy {
                 [HarmonyPatch(typeof(Game), "PlayNextArchiveLevel")]
                 [HarmonyPostfix]
                 public static void onNextLevel() {
+                    FuckTheSun();
+                }
+
+                [HarmonyPatch(typeof(LevelRush), "PlayCurrentLevelRushMission")]
+                [HarmonyPostfix]
+                public static void onNextLevelRush() {
                     FuckTheSun();
                 }
             }
