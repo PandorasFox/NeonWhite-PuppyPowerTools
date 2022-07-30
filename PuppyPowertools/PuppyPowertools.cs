@@ -273,27 +273,48 @@ namespace Puppy {
         public class VfxToggles : MelonMod {
             public static MelonPreferences_Category VfxSettings;
             public static MelonPreferences_Entry<bool> sun_disabled;
+            public static MelonPreferences_Entry<bool> reflections_disabled;
+            public static MelonPreferences_Entry<bool> bloom_disabled;
             public static MelonPreferences_Entry<bool> fireball_disabled;
+
+            private HarmonyLib.Harmony harmony_instance = new HarmonyLib.Harmony("sunkiller");
 
             public override void OnApplicationStart() {
                 VfxSettings = MelonPreferences.CreateCategory("VFX Toggles");
                 sun_disabled = VfxSettings.CreateEntry("Disable sun [requires restart to re-enable :3]", false);
-                fireball_disabled = VfxSettings.CreateEntry("Disable fireball", false);
-                if (sun_disabled.Value) {
-                    FuckTheSun();
-                }
+                bloom_disabled = VfxSettings.CreateEntry("Disable bloom", false);
+                reflections_disabled = VfxSettings.CreateEntry("Disable reflection flares", false);
+                fireball_disabled = VfxSettings.CreateEntry("Disable fireball screen effect", false);
+                harmony_instance.PatchAll(typeof(FuckTheSun_Patch));
             }
 
             public override void OnPreferencesSaved() {
-                if (sun_disabled.Value) {
-                    FuckTheSun();
-                }
+                FuckTheSun();
             }
 
             public static void FuckTheSun() {
+                if (!sun_disabled.Value && !reflections_disabled.Value && !bloom_disabled.Value) return;
+
                 Beautify.Universal.Beautify[] beautify_shit = UnityEngine.Object.FindObjectsOfType<Beautify.Universal.Beautify>();
                 for (int i = 0; i < beautify_shit.Length; ++i) {
-                    beautify_shit[i].sunFlaresIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
+                    if (sun_disabled.Value) beautify_shit[i].sunFlaresIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
+                    if (bloom_disabled.Value) beautify_shit[i].bloomIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
+                    if (reflections_disabled.Value) beautify_shit[i].anamorphicFlaresIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
+                }
+            }
+
+            public class FuckTheSun_Patch {
+                // initial level start
+                [HarmonyPatch(typeof(Game), "PlayLevel", new Type[] { typeof(string), typeof(bool), typeof(Action) })]
+                [HarmonyPostfix]
+                public static void HookLevelStart_FromArchive(bool fromArchive) {
+                    FuckTheSun();
+                }
+
+                [HarmonyPatch(typeof(Game), "PlayNextArchiveLevel")]
+                [HarmonyPostfix]
+                public static void onNextLevel() {
+                    FuckTheSun();
                 }
             }
 
