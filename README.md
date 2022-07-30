@@ -17,7 +17,7 @@ This mod started as just a speedometer, but has evolved into a handful of indepe
   * You can dynamically replace the text that is drawn on cards
   * Color customization may or may not come at a later date, pending rule approval.
 
-## Installation
+## Installation & Usage
 
 This mod uses [MelonLoader](https://github.com/LavaGang/MelonLoader) as its modloader. Install that on your Neon White install first, and then run the game once so it generates some folders, and to verify it's installed (you should see a MelonLoader splash screen).
 
