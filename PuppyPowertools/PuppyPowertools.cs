@@ -8,56 +8,20 @@ using MelonLoader;
 using HarmonyLib;
 using UnityEngine;
 using Guirao.UltimateTextDamage;
-
-public class DamageDebugLogging_Patch {
-    [HarmonyPatch(typeof(Breakable), "OnHit")]
-    [HarmonyPrefix]
-    public static void BreakableOnHitLogging(Breakable __instance, int damage, BaseDamageable.DamageSource damageSource) {
-        if (__instance._damageableType == Breakable.DamageableType.Crystal /*&& damage == 5*/ ) {
-            //MelonLogger.Msg(__instance._damageableType.ToString() + " took " + damage.ToString() + " dmg from source " + damageSource.ToString());
-
-            Type baseDamageable = typeof(BaseDamageable);
-            FieldInfo breakable = baseDamageable.GetField("_breakablePlatform", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            BaseDamageable attached_damageable = (BaseDamageable)breakable.GetValue(__instance);
-
-            if (attached_damageable != null) {
-                MelonLogger.Msg("crystal's 'breakablePlatform' is of type " + attached_damageable._damageableType.ToString() + " and has " + attached_damageable.maxHealth.ToString() + " max hp");
-            }
-        }
-    }
-
-    static int platform_pair_id = 0; // todo reset this on playerDie
-
-    [HarmonyPatch(typeof(Game), "WinRoutine")]
-    [HarmonyPatch(typeof(MechController), "Die")]
-    [HarmonyPrefix] // these need to prefix bc PlayNext handles the Started state from within this call
-    public static void OnLevelFinishDieRestartEtc() {
-        platform_pair_id = 0;
-    }
-
-    [HarmonyPatch(typeof(BaseDamageable), "FindBreakablePlatform")]
-    [HarmonyPostfix]
-    public static void BreakablePlatformSetupLogging(BaseDamageable __instance, ref BaseDamageable __result) {
-        if (__result != null) {
-            MelonLogger.Msg("Parent " + __instance.GetDamageableType().ToString() + " found underlying breakable of type " + __result.GetDamageableType().ToString() + " during its setup. zamn!");
-            UltimateTextDamageManager.Instance.Add("child " + platform_pair_id.ToString(), __instance.transform.position, "default");
-            UltimateTextDamageManager.Instance.Add("platform " + platform_pair_id.ToString(), __result.transform.position, "default");
-            platform_pair_id++;
-        }
-    }
-}
+using I2.Loc;
 
 namespace Puppy {
     public class PuppyPowertools : MelonMod {
         Speedometer speedometer = null;
         ChapterTimer chapter_timer = null;
         VfxToggles vfx_toggles = null;
+        CardCustomizations custom_cards = null;
 
         PuppyPowertools() {
             this.speedometer = new Speedometer();
             this.chapter_timer = new ChapterTimer();
             this.vfx_toggles = new VfxToggles();
+            this.custom_cards = new CardCustomizations();
         }
 
         // shared GUI helper funcs
@@ -229,6 +193,7 @@ namespace Puppy {
             public static MelonPreferences_Entry<int> chapter_x_offset;
             public static MelonPreferences_Entry<int> chapter_y_offset;
             public static MelonPreferences_Entry<int> chapter_font_size;
+            private HarmonyLib.Harmony harmony_instance = new HarmonyLib.Harmony("chapter_timer");
 
             public override void OnGUI() {
                 if (chapter_time_display.Value) {
@@ -256,7 +221,7 @@ namespace Puppy {
             }
             public override void OnPreferencesSaved() {
                 if (chapter_start_hooked && !chapter_time_display.Value) {
-                    this.HarmonyInstance.UnpatchSelf();
+                    this.harmony_instance.UnpatchSelf();
                     chapter_start_hooked = false;
                 } else if (!chapter_start_hooked && chapter_time_display.Value) {
                     ApplyChapterHooks();
@@ -265,7 +230,7 @@ namespace Puppy {
 
             public void ApplyChapterHooks() {
                 if (!chapter_start_hooked) {
-                    this.HarmonyInstance.PatchAll(typeof(ChapterTimerHooks_Patch));
+                    this.harmony_instance.PatchAll(typeof(ChapterTimerHooks_Patch));
                     chapter_start_hooked = true;
                 }
             }
@@ -307,34 +272,31 @@ namespace Puppy {
 
         public class VfxToggles : MelonMod {
             public static MelonPreferences_Category VfxSettings;
+            public static MelonPreferences_Entry<bool> sun_disabled;
             public static MelonPreferences_Entry<bool> fireball_disabled;
 
             public override void OnApplicationStart() {
                 VfxSettings = MelonPreferences.CreateCategory("VFX Toggles");
+                sun_disabled = VfxSettings.CreateEntry("Disable sun [requires restart to re-enable :3]", false);
                 fireball_disabled = VfxSettings.CreateEntry("Disable fireball", false);
-                /*
-                if (fireball_disabled.Value) {
-                    ApplyFireballPatch();
+                if (sun_disabled.Value) {
+                    FuckTheSun();
                 }
-                */
             }
-            /*
+
             public override void OnPreferencesSaved() {
-                if (fireball_disabled.Value) {
-                    ApplyFireballPatch();
-                } else {
-                    DisableFireballPatch();    
+                if (sun_disabled.Value) {
+                    FuckTheSun();
                 }
             }
 
-            public void ApplyFireballPatch() {
-
+            public static void FuckTheSun() {
+                Beautify.Universal.Beautify[] beautify_shit = UnityEngine.Object.FindObjectsOfType<Beautify.Universal.Beautify>();
+                for (int i = 0; i < beautify_shit.Length; ++i) {
+                    beautify_shit[i].sunFlaresIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
+                }
             }
 
-            public void DisableFireballPatch() {
-
-            }
-            */
             public override void OnUpdate() {
                 if (fireball_disabled.Value && RM.mechController) {
                     RM.mechController.fireballParticles.Stop();
@@ -343,23 +305,203 @@ namespace Puppy {
             }
         }
 
+        public class CardCustomizations : MelonMod {
+            public static MelonPreferences_Category CardSettings;
+            public static MelonPreferences_Entry<bool> EnableCardCustomizations;
+            /*
+            public static MelonPreferences_Entry<Color> KatanaColor;
+            public static MelonPreferences_Entry<Color> FistsColor;
+            public static MelonPreferences_Entry<Color> ElevateColor;
+            */
+            public static MelonPreferences_Entry<String> ElevateText;
+            //public static MelonPreferences_Entry<Color> PurifyColor;
+            public static MelonPreferences_Entry<String> PurifyText;
+            //public static MelonPreferences_Entry<Color> GodspeedColor;
+            public static MelonPreferences_Entry<String> GodspeedText;
+            //public static MelonPreferences_Entry<Color> StompColor;
+            public static MelonPreferences_Entry<String> StompText;
+            //public static MelonPreferences_Entry<Color> FireballColor;
+            public static MelonPreferences_Entry<String> FireballText;
+            //public static MelonPreferences_Entry<Color> DominionColor;
+            public static MelonPreferences_Entry<String> DominionText;
+            //public static MelonPreferences_Entry<Color> BoofColor;
+            public static MelonPreferences_Entry<String> BoofText;
+            //public static MelonPreferences_Entry<Color> AmmoColor;
+            public static MelonPreferences_Entry<String> AmmoText;
+            //public static MelonPreferences_Entry<Color> HealthColor;
+            public static MelonPreferences_Entry<String> HealthText;
+
+            public bool patched = false;
+            private HarmonyLib.Harmony harmony_instance = new HarmonyLib.Harmony("custom_cards");
+
+            public override void OnApplicationStart() {
+                CardSettings = MelonPreferences.CreateCategory("Card Customizations");
+                EnableCardCustomizations = CardSettings.CreateEntry<bool>("Enable card customizations [changes require level restart]", false);
+                //KatanaColor = CardSettings.CreateEntry<Color>("Katana Color", new Color(0.631373f, 0.631373f, 0.631373f, 1));
+                //FistsColor = CardSettings.CreateEntry<Color>("Fists Color", new Color(0.631373f, 0.631373f, 0.631373f, 1));
+                //ElevateColor = CardSettings.CreateEntry<Color>("Elevate Color", new Color(0.985294f, 0.853788f, 0.304282f, 1));
+                ElevateText = CardSettings.CreateEntry<String>("Elevate Text", "Elevate");
+                //PurifyColor = CardSettings.CreateEntry<Color>("Purify Color", new Color(0.666667f, 0.47451f, 0.901961f, 1));
+                PurifyText = CardSettings.CreateEntry<String>("Purify Text", "Purify");
+                //GodspeedColor = CardSettings.CreateEntry<Color>("Godspeed Color", new Color(0.47451f, 0.592157f, 0.964706f, 1));
+                GodspeedText = CardSettings.CreateEntry<String>("Godspeed Text", "Godspeed");
+                //StompColor = CardSettings.CreateEntry<Color>("Stomp Color", new Color(0.160784f, 0.666667f, 0.137255f, 1));
+                StompText = CardSettings.CreateEntry<String>("Stomp Text", "Stomp");
+                //FireballColor = CardSettings.CreateEntry<Color>("Fireball Color", new Color(0.85098f, 0.317647f, 0.392157f, 1));
+                FireballText = CardSettings.CreateEntry<String>("Fireball Text", "Fireball");
+                //DominionColor = CardSettings.CreateEntry<Color>("Dominion Color", new Color(0.164706f, 0.803922f, 0.827451f, 1));
+                DominionText = CardSettings.CreateEntry<String>("Dominion Text", "Dominion");
+                //BoofColor = CardSettings.CreateEntry<Color>("Boof Color", new Color(1, 1, 1, 1));
+                BoofText = CardSettings.CreateEntry<String>("Boof Text", "Book of Life");
+                //AmmoColor = CardSettings.CreateEntry<Color>("Ammo Color", new Color(1, 1, 1, 1));
+                AmmoText = CardSettings.CreateEntry<String>("Ammo Text", "Ammo");
+                //HealthColor = CardSettings.CreateEntry<Color>("Health Color", new Color(0.933962f, 0.436143f, 0.714336f, 1));
+                HealthText = CardSettings.CreateEntry<String>("Health Text", "Health");
+
+                if (EnableCardCustomizations.Value) {
+                    ApplyPatches();
+                }
+            }
+
+            public void ApplyPatches() {
+                if (!patched) {
+                    this.harmony_instance.PatchAll(typeof(CardCustomizations_Patch));
+                    patched = true;
+                }
+            }
+
+            public void RemovePatches() {
+                if (patched) {
+                    this.harmony_instance.UnpatchSelf();
+                    patched = false;
+                }
+            }
+
+            public override void OnPreferencesSaved() {
+                if (EnableCardCustomizations.Value) {
+                    ApplyPatches();
+                } else {
+                    RemovePatches();
+                }
+            }
+
+            public class CardCustomizations_Patch {
+                [HarmonyPatch(typeof(LocalizationManager), "GetTranslation")]
+                [HarmonyPostfix]
+                public static void OverrideCardText(string Term, ref string __result) {
+                   switch (Term) {
+                        case "Interface/DISCARD_ELEVATE": {
+                                __result = ElevateText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_PURIFY": {
+                                __result = PurifyText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_GODSPEED": {
+                                __result = GodspeedText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_STOMP": {
+                                __result = StompText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_FIREBALL": {
+                                __result = FireballText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_DOMINION": {
+                                __result = DominionText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_BOOKOFLIFE": {
+                                __result = BoofText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_HEALTH": {
+                                __result = HealthText.Value;
+                                break;
+                            }
+                        case "Interface/DISCARD_AMMO": {
+                                __result = AmmoText.Value;
+                                break;
+                            }
+                    }
+                }
+
+                /*
+                public static Color? GetNewColor(string cardID) {
+                    switch (cardID) {
+                        case "FISTS": {
+                                return FistsColor.Value;
+                            }
+                        case "KATANA": {
+                                return KatanaColor.Value;
+                            }
+                        case "KATANA_MIRACLE": {
+                                return KatanaColor.Value;
+                            }
+                        case "PISTOL": {
+                                return ElevateColor.Value;
+                            }
+                        case "MACHINEGUN": {
+                                return PurifyColor.Value;
+                            }
+                        case "RIFLE": {
+                                return GodspeedColor.Value;
+                            }
+                        case "UZI": {
+                                return StompColor.Value;
+                            }
+                        case "SHOTGUN": {
+                                return FireballColor.Value;
+                            }
+                        case "ROCKETLAUNCHER": {
+                                return DominionColor.Value;
+                            }
+                        case "RAPTURE": {
+                                return BoofColor.Value;
+                            }
+                        case "AMMO": {
+                                return AmmoColor.Value;
+                            }
+                        case "HEALTH": {
+                                return HealthColor.Value;
+                            }
+                    };
+                    return null;
+                }
+
+                [HarmonyPatch(typeof(CardPickupSpawner), "SpawnCard", new Type[] { })]
+                [HarmonyPrefix]
+                public static void OverrideCardColor(ref CardPickupSpawner __instance) {
+                    Color? c = GetNewColor(__instance.card.cardID);
+                    if (c.HasValue) {
+                        __instance.card.cardColor = c.Value;
+                    }
+                }
+                */
+            }
+        }
         public static MelonPreferences_Category poweruserprefs;
         public static MelonPreferences_Entry<int> level_rush_seed;
 
         public override void OnApplicationStart() {
             poweruserprefs = MelonPreferences.CreateCategory("PowerPrefs adjustments");
             level_rush_seed = poweruserprefs.CreateEntry("Level Rush Seed (negative is random)", -1);
-            //this.HarmonyInstance.PatchAll(typeof(DamageDebugLogging_Patch));
 
             this.speedometer.OnApplicationStart();
             this.chapter_timer.OnApplicationStart();
             this.vfx_toggles.OnApplicationStart();
+            this.custom_cards.OnApplicationStart();
         }
 
         public override void OnPreferencesSaved() {
             GameDataManager.powerPrefs.seedForLevelRushLevelOrder_NegativeValuesMeansRandomizeSeed = level_rush_seed.Value;
             this.chapter_timer.OnPreferencesSaved();
-            //this.vfx_toggles.OnPreferencesSaved();
+            this.vfx_toggles.OnPreferencesSaved();
+            this.custom_cards.OnPreferencesSaved();
+
         }
 
         public override void OnLateUpdate() {
