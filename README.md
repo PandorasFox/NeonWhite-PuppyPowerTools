@@ -10,7 +10,12 @@ This mod started as just a speedometer, but has evolved into a handful of indepe
   * Optional precise position/facing direction info 
 * Chapter timer for chapter runs
 * on-the-fly powerprefs adjustment (currently just the Level Rush Shuffle seed)
-* VFX toggling (currently, just for turning off the fireball particle fx around the screen)
+* VFX toggling
+  * You can turn off the sun! Lighting is unaffected; just the lensflare machine is gone.
+  * Fireball's particle effects around the edge of the screen can be turned off.
+* Card customization
+  * You can dynamically replace the text that is drawn on cards
+  * Color customization may or may not come at a later date, pending rule approval.
 
 ## Installation
 
