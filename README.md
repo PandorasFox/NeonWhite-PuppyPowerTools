@@ -23,8 +23,10 @@ This mod uses [MelonLoader](https://github.com/LavaGang/MelonLoader) as its modl
 
 After that, grab the latest .dll from the [Releases page](https://github.com/PandorasFox/Neon-White-Mods/releases) and drop it in the "Mods" folder in your Neon White folder, e.g. `SteamLibrary\steamapps\common\Neon White\Mods`.
 
-## Configuration
-
-Configuration for this mod is provided by the **Mono Varient** of [Melon Preferences Manager](https://github.com/sinai-dev/MelonPreferencesManager/releases/). Its default in-game bind is F5.
+You will also need to install the **Mono Varient** of [Melon Preferences Manager](https://github.com/sinai-dev/MelonPreferencesManager/releases/) in order to configure this mod. Its default keybind is F5, but you can easily rebind it in-game.
 
 The IL2CPP version of Melon Preferences Manager will **NOT** work. You **must** use the Mono variant.
+
+### Additional Notes
+
+You should probably add `--melonloader.hideconsole` to your game launch properties (right click the game in steam -> properties -> launch options at the bottom of that window) to hide the console that melonloader spawns. You really only need that if you're a mod developer; it's a weird default.
