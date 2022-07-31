@@ -106,7 +106,8 @@ namespace Puppy {
                     Vector3 normal_velocity = RM.drifter.Velocity;
                     Vector3 move_velocity = RM.drifter.MovementVelocity;
 
-                    this.total_velocity = normal_velocity + move_velocity;
+                    //this.total_velocity = normal_velocity + move_velocity;
+                    this.total_velocity = RM.drifter.Motor.BaseVelocity;
 
                     this.is_dashing = RM.drifter.GetIsDashing();
 

@@ -38,5 +38,5 @@ using Puppy;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-[assembly: MelonInfo(typeof(PuppyPowertools), "Puppy Powertools", "1.5.2", "Pandora's Fox")]
+[assembly: MelonInfo(typeof(PuppyPowertools), "Puppy Powertools", "1.5.3", "Pandora's Fox")]
 [assembly: MelonGame("Little Flag Software, LLC", "Neon White")]
