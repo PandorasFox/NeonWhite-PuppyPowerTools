@@ -276,6 +276,7 @@ namespace Puppy {
             public static MelonPreferences_Entry<bool> fireball_disabled;
             public static MelonPreferences_Entry<bool> stomp_splashbang_disabled;
             public static MelonPreferences_Entry<bool> stomp_splash_disabled;
+            public static MelonPreferences_Entry<bool> crt_effect_disabled;
 
             private HarmonyLib.Harmony harmony_instance = new HarmonyLib.Harmony("sunkiller");
 
@@ -286,10 +287,12 @@ namespace Puppy {
                 reflections_disabled = VfxSettings.CreateEntry("Disable reflection flares", false);
                 fireball_disabled = VfxSettings.CreateEntry("Disable fireball screen effect", false);
                 stomp_splashbang_disabled = VfxSettings.CreateEntry("Disable stomp splashbang", false);
+                crt_effect_disabled = VfxSettings.CreateEntry("Disable CRT effect", false);
 
                 // i cannot be fucked to make these dynamically unloadable given that most people will turn this shit off and never think about them again
                 harmony_instance.PatchAll(typeof(FuckTheSun_Patch));
                 harmony_instance.PatchAll(typeof(AntiStompFlashbang_Patch));
+                harmony_instance.PatchAll(typeof(CRTTogglePatch));
             }
 
             public override void OnPreferencesSaved() {
@@ -304,6 +307,17 @@ namespace Puppy {
                     if (sun_disabled.Value) beautify_shit[i].sunFlaresIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
                     if (bloom_disabled.Value) beautify_shit[i].bloomIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
                     if (reflections_disabled.Value) beautify_shit[i].anamorphicFlaresIntensity = new UnityEngine.Rendering.ClampedFloatParameter(0f, 0f, 0f, true);
+                }
+            }
+
+            // TODO FullscreenImageData for the perlin noise waves?
+
+            public class CRTTogglePatch {
+                // TODO ???
+                [HarmonyPatch(typeof(CRTRendererFeature.CRTEffectPass), "Execute")]
+                [HarmonyPrefix]
+                public static bool ToCRTOrNotToCRT() {
+                    return !crt_effect_disabled.Value;
                 }
             }
 
@@ -531,9 +545,34 @@ namespace Puppy {
         public static MelonPreferences_Category poweruserprefs;
         public static MelonPreferences_Entry<int> level_rush_seed;
 
+
+        // TODO: break these into their own module eventually
+        public static MelonPreferences_Category misc_tweaks_config;
+        public static MelonPreferences_Entry<bool> disable_start_mission;
+
+        // "Start Mission" button is first button in Location_Portal for MenuScreenLocation
+        // need to hook creation? or figure out its click action func....
+
+        public class IDidNotWantToClickThat {
+            [HarmonyPatch(typeof(MenuScreenLocation), "CreateActionButton")]
+            [HarmonyPrefix]
+            public static bool Smile(HubAction hubAction) {
+                if (hubAction.ID == "PORTAL_CONTINUE_MISSION") {
+                    MelonLogger.Msg("interfering with load of IDPORTAL_CONTINUE_MISSION");
+                    return !disable_start_mission.Value;
+                }
+                return true;
+            }
+        }
+
         public override void OnApplicationStart() {
             poweruserprefs = MelonPreferences.CreateCategory("PowerPrefs adjustments");
             level_rush_seed = poweruserprefs.CreateEntry("Level Rush Seed (negative is random)", -1);
+
+            misc_tweaks_config = MelonPreferences.CreateCategory("Misc. tweaks");
+            disable_start_mission = misc_tweaks_config.CreateEntry("Disable 'start mission' button in job archive", false);
+
+            HarmonyInstance.PatchAll(typeof(IDidNotWantToClickThat));
 
             this.speedometer.OnApplicationStart();
             this.chapter_timer.OnApplicationStart();
