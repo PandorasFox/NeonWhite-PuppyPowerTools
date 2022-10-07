@@ -69,6 +69,9 @@ namespace Puppy {
             public float facing_direction = 0f;
             public float facing_angle = 0f;
 
+            public float coyote_time = 0f;
+            public float swap_time = 0f;
+
             public static MelonPreferences_Category speedometer_config;
             public static MelonPreferences_Entry<bool> speedometer_enabled;
             public static MelonPreferences_Entry<Color> text_color;
@@ -116,6 +119,16 @@ namespace Puppy {
                     this.lateral_velocity_magnitude = Mathf.Sqrt(
                         Mathf.Pow(total_velocity.x, 2f) + Mathf.Pow(total_velocity.z, 2f)
                     );
+
+                    // TODO temp coyote time/swap time shit
+                    Type white = typeof(FirstPersonDrifter); // yeehaw cus it controls the guns. get it?
+                    FieldInfo coyote_jump_field = white.GetField("jumpForgivenessTimer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    this.coyote_time = (float)coyote_jump_field.GetValue(RM.drifter);
+
+                    Type yeehaw = typeof(MechController); // yeehaw cus it controls the guns. get it?
+                    FieldInfo reload_timer_field = yeehaw.GetField("weaponReloadTimer", BindingFlags.NonPublic | BindingFlags.Instance);
+                    this.swap_time = (float)reload_timer_field.GetValue(RM.mechController);
+
                 }
             }
             public override void OnGUI() {
@@ -170,6 +183,20 @@ namespace Puppy {
                     );
                     local_y_offset += font_size.Value + 2;
 
+                    // TODO NOTE ETC temp reload timer/coyote time value logging
+
+                    if (verbose_display.Value) {
+                        if (swap_time < 0) swap_time = 0;
+                        DrawText(x_offset.Value, local_y_offset, "Swap Timer: " + this.swap_time.ToString(), size, text_color.Value);
+                        local_y_offset += font_size.Value + 2;
+
+                        if (coyote_time < 0) coyote_time = 0;
+                        Color c = Color.red;
+                        if (coyote_time > 0) c = Color.green;
+
+                        DrawText(x_offset.Value, local_y_offset, "Coyote Time: " + this.coyote_time.ToString(), size, c);
+                        local_y_offset += font_size.Value + 2;
+                    }
                 }
             }
         }
@@ -569,8 +596,8 @@ namespace Puppy {
             poweruserprefs = MelonPreferences.CreateCategory("PowerPrefs adjustments");
             level_rush_seed = poweruserprefs.CreateEntry("Level Rush Seed (negative is random)", -1);
 
-            misc_tweaks_config = MelonPreferences.CreateCategory("Misc. tweaks");
-            disable_start_mission = misc_tweaks_config.CreateEntry("Disable 'start mission' button in job archive", false);
+            misc_tweaks_config = MelonPreferences.CreateCategory("Misc tweaks");
+            disable_start_mission = misc_tweaks_config.CreateEntry("disable Start Mission button in job archive", false);
 
             HarmonyInstance.PatchAll(typeof(IDidNotWantToClickThat));
 
@@ -585,7 +612,6 @@ namespace Puppy {
             this.chapter_timer.OnPreferencesSaved();
             this.vfx_toggles.OnPreferencesSaved();
             this.custom_cards.OnPreferencesSaved();
-
         }
 
         public override void OnLateUpdate() {
@@ -594,7 +620,6 @@ namespace Puppy {
 
         public override void OnUpdate() {
             this.vfx_toggles.OnUpdate();
-
         }
 
         public override void OnGUI() {
